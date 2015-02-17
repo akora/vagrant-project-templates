@@ -14,6 +14,7 @@ apt-get install -y vim htop
 apt-get clean
 
 # shell-utils.sh print_header does not work here... TODO: fix it!
+printf "\n"
 printf "********************* Basic SysInfo -- $IP_ADDRESS *********************\n"
 print_message "$OS_RELEASE" "\n"
 
