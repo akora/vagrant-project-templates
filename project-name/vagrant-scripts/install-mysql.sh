@@ -4,7 +4,7 @@
 source /vagrant/vagrant-scripts/shell-utils.sh
 
 mysql_config_file="/etc/mysql/my.cnf"
-mysql_root_password="root"
+mysql_root_password="<Your root password goes here>"
 
 print_header "Installing MySQL"
 
