@@ -1,37 +1,45 @@
 #!/usr/bin/env bash
 
-# be careful with the source path below! it seems /vagrant/ is the path "inside" the VM!
-source /vagrant/vagrant-scripts/shell-utils.sh
+three_columns="%-14s %-32s %-28s\n"
+four_columns="%-14s %-15s %-16s %-28s\n"
 
-print_header "Version checks"
+printf "****************************** Version checks ******************************\n"
 
-packages=(python git node npm bower)
+# the below list is case sensitive!
+packages=(python perl ruby php bash git java node npm)
 
-for package_to_check in ${packages[@]}; do
-  if command -v $package_to_check >/dev/null 2>&1; then
-    if [[ "$package_to_check" = "python" ]]; then
-      version="$(echo `python -c 'import sys; print(sys.version[:5])'`)"
-      print_message_with_param $package_to_check $version
-      indicator_green
-    elif [[ "$package_to_check" = "git" ]]; then
-      version="$(echo `git --version` | awk '{print $3}')"
-      print_message_with_param $package_to_check $version
-      indicator_green
+if [[ "`java -version 2>&1 | awk 'NR==2 {print $1}'`" == "OpenJDK" ]]; then
+  java_origin="OpenJDK"
+else
+  java_origin="Oracle"
+fi
+
+for package in ${packages[@]}; do
+  if command -v $package >/dev/null 2>&1; then # one way of checking if package is installed or not
+    path="$(echo `which $package`)"
+    # I wish the below wasn't necessary...
+    case $package in
+      "python")     version="$(echo `$package -c 'import sys; print(sys.version[:5])'`)";;
+      "perl")       version="$($package -v | awk 'NR==2 {print $9}' | cut -c3-8)";;
+      "ruby")       version="$($package -v | awk '{print $2}' | cut -c1-5)";;
+      "php")        version="$(echo `$package -v` | awk '{print $2}' | cut -c1-6)";;
+      "bash")       version="$($package --version | awk 'NR==1 {print $4}' | cut -c1-6)";;
+      "git")        version="$($package --version | awk '{print $3}')";;
+      "java")       version="$($package -version 2>&1 | awk -F '"' '/version/ {print $2}')" note="($java_origin)";;
+      *)            version="$(echo `$package -v`)";;
+    esac
+    if [[ "$version" =~ "v" ]]; then # remove the initial 'v' where necessary
+      version="$(echo $version | cut -c2-)"
+    fi
+    if [[ -z "$note" ]]; then # arrange into 3 columns only if there is no note
+      printf "$three_columns" $package $version $path
     else
-      version="$(echo `$package_to_check -v`)"
-      if [[ "$version" =~ "v" ]]; then
-        version="$(echo $version | cut -c2-)"
-        print_message_with_param $package_to_check $version
-        indicator_green
-      else
-        print_message_with_param $package_to_check $version
-        indicator_green
-      fi
+      printf "$four_columns" $package $version $note $path
     fi
   else
-    print_message_with_param "$package_to_check is not installed" "-----"
-    indicator_amber
+    printf "$three_columns" $package "------" "not installed"
   fi
 done
 
-exit 0
+# TODO: extend it to check the latest stable version of each package
+# Is there such a service out there?
